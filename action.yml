@@ -1,0 +1,31 @@
+name: 'Generate Slugs'
+description: 'Generate slugs for multi-branch deployment'
+inputs:
+  short_length:
+    description: 'Length of short slug'
+    required: false
+    default: 20
+outputs:
+  full:
+    description: 'Full slug'
+    value: ${{ steps.slug.outputs.branch-name-slug }}
+  short:
+    description: 'Short slug'
+    value: ${{ steps.format.outputs.slug }}
+  mysql:
+    description: 'Short slug suitable for MySQL usage'
+    value: ${{ steps.format.outputs.mysql }}
+runs:
+  using: composite
+  steps:
+    - uses: gacts/github-slug@v1
+      id: slug
+
+    - name: Format Slugs
+      id: format
+      shell: bash
+      run: |
+          short_slug=$(echo "${{ steps.slug.outputs.branch-name-slug }}" | sed -e "s/feature/f/" | sed -e "s/release/r/" | cut -c -${{ inputs.short_length }})
+          mysql_slug=$(echo "${short_slug}" | sed "s/-/_/g")
+          echo "slug=${short_slug}" >> $GITHUB_OUTPUT
+          echo "mysql=${mysql_slug}" >> $GITHUB_OUTPUT
